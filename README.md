@@ -13,519 +13,124 @@ Suggested Technical Approach
 Recommended Tools:Python 3re (regex)json code do compelte and detaiked no comment
 
 
-Neeche complete Rule-Based Customer Support Chatbot ka code hai. Isme comments nahi hain, jaisa aapne bola. Aapki attached JSON file mein diye gaye greetings aur 3 FAQs ko bhi use kiya hai: business hours, internship project submission, aur certificate processing. 
-
-
-Project files download: 
-
-1. Folder Structure
-Rule_Based_Chatbot/
-│
-├── chatbot.py
-├── chatbot_data.json
-└── README.md
-2. chatbot.py — Complete Code
-import json
-import re
-from pathlib import Path
-
-
-DATA_FILE = Path(__file__).resolve().parent / "chatbot_data.json"
-
-EXIT_COMMANDS = {"bye", "goodbye", "exit", "quit"}
-
-THANKS_PATTERNS = [
-    r"\bthank you\b",
-    r"\bthanks\b",
-    r"\bthx\b"
-]
-
-HELP_PATTERNS = [
-    r"\bhelp\b",
-    r"\bwhat can you do\b",
-    r"\bhow can you help\b"
-]
+Short summary-style README bana diya hai, jisme sirf Problem Statement aur Solution hain.
 
-PRODUCT_PATTERNS = [
-    r"\bproduct\b",
-    r"\bproducts\b",
-    r"\bprice\b",
-    r"\bcost\b",
-    r"\bfeatures?\b",
-    r"\bavailable\b",
-    r"\bavailability\b"
-]
-
-
-class RuleBasedChatbot:
-
-    def __init__(self, data_file=DATA_FILE):
-        self.data_file = Path(data_file)
-        self.data = self.load_data()
-        self.state = "greeting"
-        self.faqs = self.data.get("faqs", [])
-        self.greetings = [
-            item.lower().strip()
-            for item in self.data.get("greetings", [])
-            if isinstance(item, str)
-        ]
+📄 Download
 
-    def load_data(self):
-        try:
-            with self.data_file.open("r", encoding="utf-8") as file:
-                data = json.load(file)
-
-        except FileNotFoundError as exc:
-            raise FileNotFoundError(
-                f"Chatbot data file not found: {self.data_file}"
-            ) from exc
-
-        except json.JSONDecodeError as exc:
-            raise ValueError(
-                "Invalid JSON format in chatbot_data.json"
-            ) from exc
-
-        if not isinstance(data, dict):
-            raise ValueError("The JSON dataset must contain an object.")
-
-        if not isinstance(data.get("greetings", []), list):
-            raise ValueError("'greetings' must be a list.")
-
-        if not isinstance(data.get("faqs", []), list):
-            raise ValueError("'faqs' must be a list.")
+GitHub repository ke liye concise aur suitable format hai. 
 
-        for index, faq in enumerate(data.get("faqs", []), start=1):
-            if not isinstance(faq, dict):
-                raise ValueError(f"FAQ entry {index} must be an object.")
 
-            if not isinstance(faq.get("question"), str):
-                raise ValueError(f"FAQ entry {index} needs a question.")
 
-            if not isinstance(faq.get("answer"), str):
-                raise ValueError(f"FAQ entry {index} needs an answer.")
+all task 1 2 3 4 ki problem statement and usko kaise solve karenge uski readme bana do task 1 ki problem statemnt and solutoin then task 2 3 4 aise 
 
-        return data
+Task 1, 2, 3 aur 4 ke liye ek hi README.md bana dunga. Har task mein sirf Problem Statement aur Solution Approach ke 1–2 short paragraphs honge.
 
-    @staticmethod
-    def normalize(text):
-        text = text.lower().strip()
-        text = re.sub(r"[^\w\s'-]", " ", text)
-        text = re.sub(r"\s+", " ", text)
+Abhi available details:
 
-        return text
+Task 1: Investment Portfolio
 
-    @staticmethod
-    def contains_any(text, patterns):
-        return any(
-            re.search(pattern, text, re.IGNORECASE)
-            for pattern in patterns
-        )
+Task 2: Smart File Organizer
 
-    @staticmethod
-    def token_set(text):
-        return set(re.findall(r"\b[a-z0-9]+\b", text.lower()))
+Task 3: Rule-Based Chatbot
 
-    def find_faq(self, message):
-        normalized_message = self.normalize(message)
-        message_tokens = self.token_set(normalized_message)
+Task 4: Iska naam ya problem statement mere paas available nahi hai.
 
-        best_faq = None
-        best_score = 0.0
+Task 4 ka naam ya screenshot bhej do. Main chaaron tasks ki combined, downloadable README.md file bana dunga.
 
-        for faq in self.faqs:
-            question = self.normalize(faq["question"])
-            question_tokens = self.token_set(question)
 
-            if not question_tokens:
-                continue
-
-            if normalized_message == question:
-                return faq
-
-            overlap = len(message_tokens & question_tokens)
-
-            precision = overlap / max(len(message_tokens), 1)
-            recall = overlap / max(len(question_tokens), 1)
-
-            if precision + recall:
-                score = (
-                    2 * precision * recall
-                    / (precision + recall)
-                )
-            else:
-                score = 0.0
-
-            if question in normalized_message:
-                score = max(score, 0.95)
-
-            if score > best_score:
-                best_score = score
-                best_faq = faq
-
-        if best_faq and best_score >= 0.34:
-            return best_faq
-
-        return None
-
-    def greeting_response(self, message):
-        normalized = self.normalize(message)
-
-        for greeting in sorted(self.greetings, key=len, reverse=True):
-            if normalized == greeting or re.search(
-                rf"\b{re.escape(greeting)}\b",
-                normalized
-            ):
-                return (
-                    "Hello! I am your support assistant. "
-                    "You can ask about business hours, "
-                    "project submission, or certificates."
-                )
-
-        return None
-
-    def identify_intent(self, message):
-        normalized = self.normalize(message)
-
-        if normalized in EXIT_COMMANDS:
-            self.state = "exit"
-
-            return "Goodbye! Thank you for contacting support."
-
-        greeting = self.greeting_response(message)
-
-        if greeting:
-            self.state = "intent_identification"
-            return greeting
-
-        if self.contains_any(normalized, THANKS_PATTERNS):
-            self.state = "resolution"
-
-            return (
-                "You're welcome! "
-                "Is there anything else I can help you with?"
-            )
-
-        if self.contains_any(normalized, HELP_PATTERNS):
-            self.state = "intent_identification"
-
-            return (
-                "I can help with business hours, "
-                "internship project submission, "
-                "and certificate processing."
-            )
-
-        faq = self.find_faq(message)
-
-        if faq:
-            self.state = "resolution"
-            return faq["answer"]
-
-        if self.contains_any(normalized, [
-            r"\bhour\b",
-            r"\bhours\b",
-            r"\bopen\b",
-            r"\bclosing\b",
-            r"\bworking days\b"
-        ]):
-            self.state = "resolution"
-
-            return (
-                "Our business hours are Monday through Friday, "
-                "from 9:00 AM to 6:00 PM IST."
-            )
-
-        if self.contains_any(normalized, [
-            r"\bintern(ship)?\b",
-            r"\bsubmit\b",
-            r"\bsubmission\b",
-            r"\bgithub\b",
-            r"\brepository\b",
-            r"\bworkspace\b"
-        ]):
-            self.state = "resolution"
-
-            return (
-                "You can submit your public GitHub repository "
-                "link through your Student Workspace."
-            )
-
-        if self.contains_any(normalized, [
-            r"\bcertificate\b",
-            r"\bcertification\b",
-            r"\bissued\b"
-        ]):
-            self.state = "resolution"
-
-            return (
-                "Certificates are reviewed and issued within "
-                "3-5 business days after your code review."
-            )
-
-        if self.contains_any(normalized, PRODUCT_PATTERNS):
-            self.state = "resolution"
-
-            return (
-                "I don't have product catalogue or pricing "
-                "details in the current dataset. "
-                "Please contact a support representative "
-                "for product-specific information."
-            )
-
-        self.state = "intent_identification"
-
-        return (
-            "I'm not sure I understood that question. "
-            "You can ask about business hours, project submission, "
-            "or certificates. Type 'help' for supported topics."
-        )
-
-    def respond(self, message):
-        if self.state == "exit":
-            return (
-                "This conversation has ended. "
-                "Run the program again to restart."
-            )
-
-        if not message or not message.strip():
-            return (
-                "Please enter a question or type 'help' "
-                "to see supported topics."
-            )
-
-        return self.identify_intent(message.strip())
-
-    def run(self):
-        print("=" * 60)
-        print("       RULE-BASED CUSTOMER SUPPORT CHATBOT")
-        print("=" * 60)
-
-        print(
-            "Bot: Hello! Ask me about business hours, "
-            "project submission, or certificates."
-        )
-
-        print(
-            "Bot: Type 'help' for assistance or "
-            "'bye', 'exit', or 'quit' to finish."
-        )
-
-        print("-" * 60)
-
-        while self.state != "exit":
-            try:
-                user_message = input("You: ")
-
-            except (EOFError, KeyboardInterrupt):
-                print(
-                    "\nBot: Goodbye! "
-                    "Thank you for contacting support."
-                )
-
-                self.state = "exit"
-                break
-
-            response = self.respond(user_message)
+Detailed Problem Statement & Requirements
 
-            print(f"Bot: {response}\n")
+Develop a terminal-based Hangman game where the user attempts to guess a hidden word letter by letter within 6 attempts. Implement visual ASCII gallows art that updates with each incorrect guess, tracks previously guessed letters, and prevents duplicate penalty deduction.
 
+Suggested Technical Approach
 
-def main():
-    try:
-        chatbot = RuleBasedChatbot()
-        chatbot.run()
+1. Create 'hangman.py'. 2. Download the provided English word list or define a secret word array. 3. Use random.choice() to select a word. 4. Track correctly guessed letters in a set and display a masked string (e.g. '_ A _ H E O N'). 5. Limit mistakes to 6 and display corresponding ASCII stage art for each incorrect guess.
 
-    except (FileNotFoundError, ValueError) as error:
-        print(f"Startup error: {error}")
+Recommended Tools:Python 3VS Code / PyCharmStandard Library (random)
 
+Download English Words List (.TXT) → Detailed Problem Statement & Requirements
 
-if __name__ == "__main__":
-    main()
-3. chatbot_data.json
-Aapki attached JSON file ko isi naam se chatbot.py ke saath rakhein.
+Build an investment portfolio tracking utility. The program allows users to enter stock ticker symbols, buy prices, and share quantities. It computes total portfolio value, percentage gain/loss per holding, and automatically logs the transaction summary to an external CSV file.
 
-{
-    "greetings": [
-        "hello",
-        "hi",
-        "hey",
-        "good morning",
-        "good afternoon"
-    ],
-    "faqs": [
-        {
-            "question": "What are your hours of operation?",
-            "answer": "We operate Monday through Friday from 9:00 AM to 6:00 PM IST."
-        },
-        {
-            "question": "How do I submit my internship project?",
-            "answer": "You can submit your public GitHub repository link through your Student Workspace."
-        },
-        {
-            "question": "When will I receive my certificate?",
-            "answer": "Certificates are reviewed and issued within 3-5 business days after your code review."
-        }
-    ]
-}
-4. Run karne ka command
-Terminal mein project folder open karein aur execute karein:
+Suggested Technical Approach
 
-python chatbot.py
-Kisi additional package ko install karne ki zaroorat nahi hai.
+1. Create 'portfolio.py'. 2. Store portfolio positions in a dictionary structure. 3. Look up current ticker prices (from the sample CSV or live via requests/yfinance). 4. Calculate total invested capital vs current market value. 5. Write results into 'portfolio_summary.csv' using Python's built-in csv module.
 
-5. Example Output
-============================================================
-       RULE-BASED CUSTOMER SUPPORT CHATBOT
-============================================================
-Bot: Hello! Ask me about business hours, project submission, or certificates.
-Bot: Type 'help' for assistance or 'bye', 'exit', or 'quit' to finish.
-------------------------------------------------------------
-You: hello
-Bot: Hello! I am your support assistant. You can ask about business hours, project submission, or certificates.
+Recommended Tools:Python 3csv moduleFile IO
 
-You: What are your business hours?
-Bot: We operate Monday through Friday from 9:00 AM to 6:00 PM IST.
+Download S&P 500 Ticker Dataset (.CSV) → Detailed Problem Statement & Requirements
 
-You: How do I submit my internship project?
-Bot: You can submit your public GitHub repository link through your Student Workspace.
+Construct an autonomous desktop automation utility that organizes cluttered directories (e.g., Downloads folder). The script inspects every file's extension, dynamically creates category subfolders (/Documents, /Images, /Videos, /Archives, /Code), and safely moves files while handling permission exceptions and naming collisions.
 
-You: When will I receive my certificate?
-Bot: Certificates are reviewed and issued within 3-5 business days after your code review.
+Suggested Technical Approach
 
-You: bye
-Bot: Goodbye! Thank you for contacting support.
-Features included
-Keyword matching: User ke message se relevant intent identify karta hai.
+1. Create 'organizer.py'. 2. Define an extension mapping dictionary: {'.pdf': 'Documents', '.jpg': 'Images', '.png': 'Images', '.zip': 'Archives'}. 3. Use os.scandir() and shutil.move() to relocate files. 4. Implement try-except blocks to catch FileExistsError or PermissionError. 5. Print a formatted execution summary showing total files relocated.
 
-Regex matching: Patterns se greetings aur supported queries identify karta hai.
+Recommended Tools:Python 3osshutilpathlib
 
-JSON-based FAQs: Questions aur answers alag file mein store hote hain.
+View Python File Handling Docs ↗ Detailed Problem Statement & Requirements
 
-Conversation state: Greeting, intent identification, resolution aur exit states maintain hote hain.
+Implement a rule-based customer support or product assistant. The bot parses user input for keywords and regular expressions, handles queries regarding business hours, product FAQs, and returns contextual responses. It includes fallback handling for unrecognized queries and clean exit commands ('bye', 'exit', 'quit').
 
-Fallback handling: Unknown query par helpful response deta hai.
+Suggested Technical Approach
 
-Graceful exit: bye, exit, aur quit commands support karta hai.
+1. Create 'chatbot.py'. 2. Define intent response dictionaries or load questions from a JSON dataset. 3. Normalize user input (lowercase, strip whitespace, regex keyword extraction). 4. Implement conversational state management (greeting -> intent identification -> resolution -> exit). 5. Provide graceful fallbacks when query confidence is low.
 
-Error handling: Missing ya invalid JSON dataset ke liye error message deta hai.
+Recommended Tools:Python 3re (regex)json
 
-Note: Ye rule-based chatbot hai, AI/LLM chatbot nahi. Product-specific answers tabhi dega jab aap unke questions aur answers chatbot_data.json mein add karenge. 
+Download Sample FAQ Dataset (.JSON) → ye rahe ab do
 
 
-ab in 4 ki readme .md bana do downlloadble bas overview summanry type banana github ke liye for this entire repo 
+Chaaron tasks ki combined GitHub-ready README.md bana di hai. Har task mein Problem Statement aur Solution Approach diya gaya hai, based on your provided requirements.
 
-Main 3 projects identify kar paaya hoon:
-
-Investment Portfolio — portfolio.py, stock_list.csv
-
-Smart File Organizer — organizer.py
-
-Rule-Based Chatbot — chatbot.py, chatbot_data.json
-
-4th project ka naam bata do. Uske baad main chaaron repositories ke liye separate, downloadable README.md files bana dunga — GitHub-ready format mein, sirf overview, project summary, key features, tech stack aur basic usage ke saath. 📄
-
-
-
-
-Ad
-Ads do not influence the answers you get from ChatGPT. Your chats stay private. 
-Learn about ads and personalization
-
-readme.md banan do overall 
-
-Overall GitHub repository ke liye README.md bana diya hai. 📄
-
+📄 Download README.md
 
 Isme included hai:
 
-Project Overview — repository ka overall summary
+Task 1: Hangman Game
 
-Projects — Investment Portfolio, Smart File Organizer aur Rule-Based Chatbot
+Task 2: Investment Portfolio Tracker
 
-Technology Stack — Python, JSON aur CSV
+Task 3: Smart File Organizer
 
-Getting Started — basic run commands
+Task 4: Rule-Based Customer Support Chatbot
 
-Repository Structure
-
-Purpose & License
-
-GitHub par use kaise karein: Download karke apne main repository folder mein README.md naam se rakho aur GitHub par push kar do.
-
-Note: README available project details par based hai. Agar chautha project bhi isi repository ka part hai, toh uska section add karna hoga. 
+README concise hai, jise directly apni GitHub repository mein add kar sakte ho. 
 
 
 
+Library
+/
 README.md
 
 
-Project Portfolio
-A collection of practical Python projects focused on automation, data handling, and conversational support. Each project is designed to demonstrate a specific use case with a simple, easy-to-understand implementation.
 
-Projects
-1. Investment Portfolio
-A Python-based portfolio utility that works with stock data stored in a CSV file.
+Python Mini Projects
+Task 1: Hangman Game
+Problem Statement:
+Develop a terminal-based Hangman game in which the player guesses a hidden word one letter at a time, with a maximum of six incorrect attempts. The game should display ASCII gallows art that changes after each incorrect guess, track guessed letters, and prevent duplicate guesses from reducing the remaining attempts.
 
-Main files
+Solution Approach:
+Create hangman.py and select a secret word randomly from a predefined list or an English word dataset using Python's random module. Track guessed letters with a set, display the word with unguessed letters masked, and update the gallows after each incorrect guess until the player wins or runs out of attempts.
 
-portfolio.py
+Task 2: Investment Portfolio Tracker
+Problem Statement:
+Build a utility that lets users enter stock ticker symbols, purchase prices, and share quantities. It should calculate the total invested amount, current portfolio value, and percentage gain or loss for each holding, then save a transaction summary to a CSV file.
 
-stock_list.csv
+Solution Approach:
+Create portfolio.py and store portfolio positions in a suitable data structure, such as a dictionary. Obtain stock prices from the provided CSV dataset or a live market-data source, calculate each holding's invested value and gain or loss, and write the results to portfolio_summary.csv using Python's built-in csv module.
 
-2. Smart File Organizer
-A Python utility for organizing files into categories based on their file types, helping keep directories structured and easier to navigate.
+Task 3: Smart File Organizer
+Problem Statement:
+Develop a desktop file-organization utility that scans a cluttered directory, identifies files by extension, creates category folders such as Documents, Images, Videos, Archives, and Code, and moves files into the appropriate folders. It should handle permission errors and filename collisions safely.
 
-Main file
+Solution Approach:
+Create organizer.py with an extension-to-category mapping. Use os.scandir() or pathlib to inspect files and shutil.move() to move them into dynamically created folders. Add exception handling for permission and file conflicts, and print a summary of how many files were moved.
 
-organizer.py
+Task 4: Rule-Based Customer Support Chatbot
+Problem Statement:
+Build a rule-based customer support or product assistant that interprets user messages using keywords and regular expressions. It should answer questions about business hours and FAQs, provide fallback responses for unknown queries, and exit cleanly when the user enters commands such as bye, exit, or quit.
 
-3. Rule-Based Chatbot
-A lightweight customer-support chatbot that uses a JSON knowledge base to respond to greetings and frequently asked questions. It also handles common intents such as help, thanks, and exit commands.
-
-Main files
-
-chatbot.py
-
-chatbot_data.json
-
-Technology
-Python
-
-JSON for chatbot knowledge data
-
-CSV for stock-list data
-
-Standard Python libraries for core functionality
-
-Getting Started
-Clone or download this repository.
-
-Open the folder for the project you want to run.
-
-Check the files and any project-specific data files.
-
-Run the relevant Python script from a terminal.
-
-For example, to start the rule-based chatbot:
-
-python chatbot.py
-To run the file organizer, use:
-
-python organizer.py
-Run each command from the directory containing the corresponding script. If a project has additional instructions or options, refer to its own documentation.
-
-Repository Structure
-.
-├── portfolio.py
-├── stock_list.csv
-├── organizer.py
-├── chatbot.py
-├── chatbot_data.json
-└── README.md
-The exact folder structure may vary depending on how the projects are organized in your repository.
-
-Purpose
-This repository serves as a compact portfolio of Python projects demonstrating basic data handling, automation, and rule-based response logic.
-
-License
-No license has been specified. Add a license file if you want to define how others may use, modify, or distribute this project.
+Solution Approach:
+Create chatbot.py and define response rules or load FAQs from a JSON dataset. Normalize input by converting it to lowercase and removing unnecessary whitespace, then identify intents using keywords, regular expressions, or simple matching logic. Manage the conversation flow from greeting to intent identification, resolution, and exit, with a fallback when no suitable answer is found.
 
